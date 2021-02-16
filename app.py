@@ -3,6 +3,7 @@ from data import Articles
 from flask_mysqldb import MySQL
 from wtforms import Form, StringField, TextAreaField, PasswordField, validators
 from passlib.hash import sha256_crypt
+from functools import wraps
 
 app = Flask(__name__)
 
@@ -69,6 +70,65 @@ def register():
     return redirect(url_for('index'))
     
   return render_template('register.html', form=form)
+
+
+#login user
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+  if request.method == 'POST':
+    # Get form fields
+    username = request.form['username']
+    password_candidate = request.form['password']
+
+    # Create cursor
+    cur = mysql.connection.cursor()
+    
+    # Get user by username
+    result = cur.execute("SELECT * FROM users WHERE username = %s", [username])
+    if result > 0:
+      #Get stored hash
+      data = cur.fetchone()
+      password = data['password']
+
+      # Compare passwords
+      if sha256_crypt.verify(password_candidate, password):
+        session['logged_in'] = True
+        session['username'] = username
+
+        flash('Login Successful. Happy Writing!', 'success')
+
+        return redirect(url_for('dashboard'))
+      else:
+        error = 'Invalid password'
+        return render_template('login.html', error=error)
+    else:
+      error = 'User not found'
+      return render_template('login.html', error=error)
+  return render_template('login.html')
+
+# Protect routes: check if user is logged in
+def login_required(f):
+  @wraps(f)
+  def decorated_function(*args, **kwargs):
+    if 'logged_in' in session:
+      return f(*args, **kwargs)
+    else:
+      flash('Access denied. Please Log in to continue', 'danger')
+      return redirect(url_for('login'))
+  return decorated_function
+
+# Logout
+@app.route('/logout')
+def logout():
+  session.clear()
+  flash('Logout successful.', 'success')
+  return redirect(url_for('login'))
+
+# Dashboard 
+@app.route('/dashboard')
+@login_required
+def dashboard():
+  return render_template('dashboard.html')
 
 
 
