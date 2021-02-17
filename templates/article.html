@@ -1,5 +1,10 @@
-{% extends 'layout.html' %} {%block body%}
+{% extends 'layout.html' %} {%block body%} {% if article %}
+<h1>{{article.title}}</h1>
+<small>Created by {{article.author}}</small>
+<hr />
 
-<h1>{{id}}</h1>
+<div>{{article.body | safe}}</div>
 
-{%endblock%}
+{% else %}
+<p class="alert alert-info">Requested article not found</p>
+{% endif %} {%endblock%}
