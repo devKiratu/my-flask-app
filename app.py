@@ -40,8 +40,7 @@ def articles():
   if result > 0:
      return render_template('articles.html', articles=articles)
   else:
-    msg = 'No articles found'
-    return render_template('articles.html', msg=msg)
+    return render_template('articles.html')
 
 @app.route('/article/<string:id>/')
 def article(id):
@@ -164,8 +163,7 @@ def dashboard():
   if result > 0:
     return render_template('dashboard.html', articles=articles)
   else:
-    msg = 'No articles found'
-    return render_template('dashboard.html', msg=msg)
+    return render_template('dashboard.html')
   # close connection
   cur.close()
 
@@ -201,6 +199,62 @@ def add_article():
 
 
   return render_template('add_article.html', form=form)
+
+# Add article route
+@app.route('/edit_article/<string:id>/', methods=['GET', 'POST'])
+@login_required
+def edit_article(id):
+  form = ArticlesForm(request.form)
+
+  # create cursor
+  cur = mysql.connection.cursor()
+
+  cur.execute("SELECT * FROM articles WHERE id=%s", [id])
+
+  article = cur.fetchone()
+  form.title.data = article['title']
+  form.body.data = article['body']
+  
+  if request.method == 'POST' and form.validate():
+    title = request.form['title']
+    body = request.form['body']
+
+    # Create cursor
+    # cur = mysql.connection.cursor()
+
+    # Add to DB
+    cur.execute("UPDATE articles SET title=%s , body=%s WHERE id=%s", (title, body, id))
+
+    # Commit to DB
+    mysql.connection.commit()
+
+
+    flash('Article updated successfully', 'success')
+
+    return redirect(url_for('dashboard'))
+
+  #Close connection
+  cur.close()
+
+  return render_template('edit_article.html', form=form)
+
+# Delete article
+@app.route('/delete_article/<string:id>', methods=['POST'])
+@login_required
+def delete_article(id):
+  #create cursor
+  cur = mysql.connection.cursor()
+  # execute
+  cur.execute("DELETE FROM articles WHERE id=%s", [id])
+
+  #commit to Db
+  mysql.connection.commit()
+  #close connection
+  cur.close()
+
+  flash('Article Deleted', 'success')
+
+  return redirect(url_for('dashboard'))
 
 
 

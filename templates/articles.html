@@ -1,6 +1,6 @@
 {% extends 'layout.html' %} {%block body%}
 <h1>Articles</h1>
-{% for article in articles %}
+{% if articles %} {% for article in articles %}
 
 <ul class="list-group">
 	<li class="list-group-item">
@@ -8,4 +8,6 @@
 	</li>
 </ul>
 
-{% endfor %} {%endblock%}
+{% endfor %} {%else%}
+<p class="alert alert-info">No articles found. Add an article to display</p>
+{% endif %} {%endblock%}
